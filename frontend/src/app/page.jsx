@@ -1,48 +1,49 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Heart, ArrowRight } from "lucide-react";
+import { ShieldCheck, ChevronRight } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Se já tiver usuário, vai direto pro dashboard
-    if (localStorage.getItem("wedding_user")) {
+    // Verifica se já está logado
+    const user = localStorage.getItem("wedding_user");
+    if (user) {
+      console.log("Usuário encontrado, redirecionando...", user);
       router.push("/dashboard");
     }
   }, [router]);
 
-  const handleLogin = (user) => {
-    localStorage.setItem("wedding_user", user);
-    router.push("/dashboard");
+  const handleLogin = (userType) => {
+    console.log("Logando como:", userType);
+    localStorage.setItem("wedding_user", userType);
+    // Força o redirecionamento
+    window.location.href = "/dashboard"; 
   };
 
   return (
-    <div style={{
-      height: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
-      padding: 20
-    }}>
-      <div className="glass-panel" style={{padding: 40, maxWidth: 400, width: "100%", textAlign: "center"}}>
-        <div style={{marginBottom: 20, display:'flex', justifyContent:'center'}}>
-          <div style={{background: 'rgba(255,255,255,0.1)', padding: 15, borderRadius: '50%'}}>
-            <Heart size={40} className="text-grad" fill="rgba(236, 72, 153, 0.5)" />
-          </div>
+    <div className="login-wrapper">
+      <div className="card login-box">
+        <div style={{textAlign: 'center', marginBottom: 30}}>
+          <ShieldCheck size={48} color="#3b82f6" style={{margin:'0 auto 15px'}} />
+          <h1 style={{fontSize: '1.5rem', fontWeight: 700}}>Acesso Restrito</h1>
+          <p style={{color: '#94a3b8', fontSize: '0.9rem'}}>Selecione o perfil de acesso</p>
         </div>
-        
-        <h1 style={{fontSize: '2rem', marginBottom: 10, fontWeight: 700}}>Bem-vindos</h1>
-        <p style={{color: 'rgba(255,255,255,0.6)', marginBottom: 30}}>
-          Sistema Premium de Gestão <br/> Casamento & Casa Nova
-        </p>
 
-        <div style={{display: 'flex', flexDirection: 'column', gap: 15}}>
-          <button onClick={() => handleLogin("Noivo")} className="btn-primary" style={{background: 'linear-gradient(90deg, #3b82f6, #2563eb)'}}>
-            🤵 Entrar como Noivo
-          </button>
-          <button onClick={() => handleLogin("Noiva")} className="btn-primary" style={{background: 'linear-gradient(90deg, #ec4899, #db2777)'}}>
-            👰 Entrar como Noiva
-          </button>
+        <div className="user-option" onClick={() => handleLogin("Noivo")}>
+          <div style={{fontWeight: 600}}>Perfil Administrativo (Noivo)</div>
+          <ChevronRight size={20} color="#64748b" />
         </div>
+
+        <div className="user-option" onClick={() => handleLogin("Noiva")}>
+          <div style={{fontWeight: 600}}>Perfil Administrativo (Noiva)</div>
+          <ChevronRight size={20} color="#64748b" />
+        </div>
+
+        <p style={{textAlign: 'center', fontSize: '0.8rem', color: '#475569', marginTop: 20}}>
+          Sistema de Gestão Financeira & Patrimonial v1.0
+        </p>
       </div>
     </div>
   );

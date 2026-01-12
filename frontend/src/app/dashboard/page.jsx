@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, Wallet, ClipboardList, LogOut, CheckCircle, Circle } from "lucide-react";
+import { Plus, Trash2, Wallet, ListChecks, LogOut, TrendingUp, TrendingDown } from "lucide-react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -9,7 +9,6 @@ export default function Dashboard() {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState("finance");
-  
   const [items, setItems] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [summary, setSummary] = useState(null);
@@ -21,12 +20,12 @@ export default function Dashboard() {
   useEffect(() => {
     const savedUser = localStorage.getItem("wedding_user");
     if (!savedUser) {
-      router.push("/"); // Chuta pra fora se não tiver logado
+      window.location.href = "/"; // Redireciona via browser se router falhar
     } else {
       setUser(savedUser);
       fetchData();
     }
-  }, [router]);
+  }, []);
 
   const fetchData = async () => {
     try {
@@ -38,12 +37,12 @@ export default function Dashboard() {
       setItems(await itemsRes.json());
       setTasks(await tasksRes.json());
       setSummary(await sumRes.json());
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error("Erro API:", e); }
   };
 
   const handleLogout = () => {
     localStorage.removeItem("wedding_user");
-    router.push("/");
+    window.location.href = "/";
   };
 
   // Handlers
@@ -68,119 +67,128 @@ export default function Dashboard() {
   };
 
   const toggleTask = async (id) => { await fetch(`${API_URL}/tasks/${id}`, { method: "PUT" }); fetchData(); };
-  const deleteTask = async (id) => { if(confirm("Remover?")) { await fetch(`${API_URL}/tasks/${id}`, { method: "DELETE" }); fetchData(); }};
-  const deleteItem = async (id) => { if(confirm("Remover gasto?")) { await fetch(`${API_URL}/items/${id}`, { method: "DELETE" }); fetchData(); }};
+  const deleteTask = async (id) => { if(confirm("Confirmar exclusão?")) { await fetch(`${API_URL}/tasks/${id}`, { method: "DELETE" }); fetchData(); }};
+  const deleteItem = async (id) => { if(confirm("Confirmar exclusão?")) { await fetch(`${API_URL}/items/${id}`, { method: "DELETE" }); fetchData(); }};
 
   const formatCurrency = (val) => Number(val).toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
 
-  if (!user) return null; // Loading state simples
+  if (!user) return <div style={{padding:20, color:'white'}}>Carregando sistema...</div>;
 
   return (
     <div className="container">
-      {/* Header Premium */}
-      <div className="glass-panel header-glass">
-        <div>
-          <p style={{fontSize: '0.9rem', opacity: 0.7}}>Olá, {user}</p>
-          <h2 className="text-grad" style={{fontSize: '1.5rem'}}>Dashboard</h2>
+      {/* Header */}
+      <div className="app-header">
+        <div className="brand">
+          <Wallet size={24} color="#3b82f6"/> ERP Financeiro
         </div>
-        <button onClick={handleLogout} style={{background:'rgba(255,255,255,0.1)', border:'none', padding:10, borderRadius: 10, color:'white', cursor:'pointer'}}>
-          <LogOut size={20}/>
-        </button>
-      </div>
-
-      {/* Cards Resumo */}
-      <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 15, marginBottom: 30}}>
-        <div className="glass-card">
-          <div style={{opacity:0.7, fontSize:'0.8rem', textTransform:'uppercase', marginBottom:5}}>Finanças</div>
-          <div style={{fontSize:'1.4rem', fontWeight:'bold'}}>{Math.round(summary?.progress_money || 0)}%</div>
-          <div className="progress-track">
-            <div className="progress-fill" style={{width: `${summary?.progress_money || 0}%`, background: 'linear-gradient(90deg, #60a5fa, #3b82f6)'}}></div>
-          </div>
-        </div>
-        <div className="glass-card">
-          <div style={{opacity:0.7, fontSize:'0.8rem', textTransform:'uppercase', marginBottom:5}}>Checklist</div>
-          <div style={{fontSize:'1.4rem', fontWeight:'bold'}}>{summary?.completed_tasks}/{summary?.total_tasks}</div>
-          <div className="progress-track">
-            <div className="progress-fill" style={{width: `${summary?.progress_tasks || 0}%`, background: 'linear-gradient(90deg, #34d399, #10b981)'}}></div>
-          </div>
+        <div style={{display:'flex', alignItems:'center', gap: 15}}>
+          <span style={{color:'#94a3b8', fontSize:'0.9rem'}}>Logado: <b>{user}</b></span>
+          <button onClick={handleLogout} className="btn-outline" style={{padding: '8px', border:'1px solid #334155', borderRadius: 4}}>
+            <LogOut size={16}/>
+          </button>
         </div>
       </div>
 
-      {/* Navegação Tabs */}
+      {/* KPI Cards */}
+      <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 20, marginBottom: 30}}>
+        <div className="card">
+          <div style={{color:'#94a3b8', fontSize:'0.8rem', fontWeight:700, textTransform:'uppercase'}}>Execução Financeira</div>
+          <div style={{fontSize:'1.8rem', fontWeight:700, margin: '10px 0'}}>{Math.round(summary?.progress_money || 0)}%</div>
+          <div style={{height: 4, background: '#334155', borderRadius: 2}}>
+             <div style={{height:'100%', width: `${summary?.progress_money || 0}%`, background: '#3b82f6'}}></div>
+          </div>
+        </div>
+        <div className="card">
+          <div style={{color:'#94a3b8', fontSize:'0.8rem', fontWeight:700, textTransform:'uppercase'}}>Checklist Operacional</div>
+          <div style={{fontSize:'1.8rem', fontWeight:700, margin: '10px 0'}}>{summary?.completed_tasks} / {summary?.total_tasks}</div>
+          <div style={{height: 4, background: '#334155', borderRadius: 2}}>
+             <div style={{height:'100%', width: `${summary?.progress_tasks || 0}%`, background: '#10b981'}}></div>
+          </div>
+        </div>
+        <div className="card">
+          <div style={{color:'#94a3b8', fontSize:'0.8rem', fontWeight:700, textTransform:'uppercase'}}>Saldo Disponível</div>
+          <div style={{fontSize:'1.8rem', fontWeight:700, margin: '10px 0', color: (summary?.remaining < 0 ? '#ef4444' : '#10b981')}}>
+            {formatCurrency(summary?.remaining || 0)}
+          </div>
+        </div>
+      </div>
+
+      {/* Navegação */}
       <div className="tabs">
         <button className={`tab-btn ${activeTab === 'finance' ? 'active' : ''}`} onClick={() => setActiveTab('finance')}>
-          <Wallet size={18} style={{verticalAlign: 'middle', marginRight: 5}}/> Financeiro
+          Fluxo de Caixa
         </button>
         <button className={`tab-btn ${activeTab === 'tasks' ? 'active' : ''}`} onClick={() => setActiveTab('tasks')}>
-          <ClipboardList size={18} style={{verticalAlign: 'middle', marginRight: 5}}/> Tarefas
+          Tarefas Operacionais
         </button>
       </div>
 
-      <div style={{marginTop: 30}}>
-        {/* --- CONTEÚDO FINANÇAS --- */}
-        {activeTab === 'finance' && (
-          <>
-            <div className="glass-card" style={{marginBottom: 20}}>
-              <form onSubmit={handleAddItem}>
-                <div style={{display:'grid', gridTemplateColumns: '1fr 1fr', gap: 10}}>
-                  <select value={newItem.category} onChange={e => setNewItem({...newItem, category: e.target.value})}>
-                    <option>Geral</option><option>Buffet</option><option>Noiva</option><option>Noivo</option><option>Casa</option>
-                  </select>
-                  <input type="date" value={newItem.due_date} onChange={e => setNewItem({...newItem, due_date: e.target.value})} />
-                </div>
-                <input placeholder="Ex: Vestido, Pedreiro..." value={newItem.item_name} onChange={e => setNewItem({...newItem, item_name: e.target.value})} required/>
-                <input type="number" placeholder="Valor (R$)" value={newItem.estimated_value} onChange={e => setNewItem({...newItem, estimated_value: e.target.value})} required/>
-                <button type="submit" className="btn-primary"><Plus size={20} style={{verticalAlign: 'middle'}}/> Adicionar Gasto</button>
-              </form>
-            </div>
+      {/* --- MÓDULO FINANCEIRO --- */}
+      {activeTab === 'finance' && (
+        <div className="card">
+          <h3 style={{marginBottom: 20, fontSize: '1.1rem'}}>Lançamento de Despesas</h3>
+          <form onSubmit={handleAddItem} style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr 100px', gap: 10, marginBottom: 30}}>
+            <input placeholder="Descrição" value={newItem.item_name} onChange={e => setNewItem({...newItem, item_name: e.target.value})} required/>
+            <select value={newItem.category} onChange={e => setNewItem({...newItem, category: e.target.value})}>
+              <option>Geral</option><option>Obra</option><option>Buffet</option><option>Documentação</option>
+            </select>
+            <input type="number" placeholder="Valor" value={newItem.estimated_value} onChange={e => setNewItem({...newItem, estimated_value: e.target.value})} required/>
+            <button type="submit" className="btn btn-primary"><Plus/></button>
+          </form>
 
-            {items.map(item => (
-              <div key={item.id} className="list-item">
-                <div style={{display:'flex', gap: 15, alignItems:'center'}}>
-                  <div className={`avatar ${item.created_by === 'Noiva' ? 'av-noiva' : 'av-noivo'}`}>
-                    {item.created_by ? item.created_by[0] : '?'}
-                  </div>
-                  <div>
-                    <div style={{fontWeight:'bold'}}>{item.item_name}</div>
-                    <div style={{fontSize:'0.8rem', opacity:0.6}}>{item.category} • {formatCurrency(item.estimated_value)}</div>
-                  </div>
+          <div className="list-header">
+            <div>Descrição</div>
+            <div style={{textAlign:'right'}}>Valor</div>
+            <div style={{textAlign:'center'}}>Ação</div>
+          </div>
+          {items.map(item => (
+            <div key={item.id} className="list-item">
+              <div>
+                <div style={{fontWeight:600}}>{item.item_name}</div>
+                <div style={{fontSize:'0.8rem', color:'#64748b'}}>
+                  {item.category} • Resp: {item.created_by}
                 </div>
-                <button onClick={() => deleteItem(item.id)} style={{background:'none', border:'none', color:'rgba(255,255,255,0.3)', cursor:'pointer'}}>
+              </div>
+              <div style={{textAlign:'right', fontFamily:'monospace', fontSize:'1rem'}}>
+                {formatCurrency(item.estimated_value)}
+              </div>
+              <div style={{textAlign:'center'}}>
+                <button onClick={() => deleteItem(item.id)} style={{background:'none', border:'none', color:'#475569', cursor:'pointer'}}>
                   <Trash2 size={16}/>
                 </button>
               </div>
-            ))}
-          </>
-        )}
-
-        {/* --- CONTEÚDO CHECKLIST --- */}
-        {activeTab === 'tasks' && (
-          <>
-            <div className="glass-card" style={{marginBottom: 20}}>
-              <form onSubmit={handleAddTask} style={{display:'flex', gap: 10}}>
-                <input placeholder="Nova tarefa..." value={newTask.title} onChange={e => setNewTask({...newTask, title: e.target.value})} required style={{marginBottom:0}}/>
-                <button type="submit" className="btn-primary" style={{width: 'auto', padding: '0 20px'}}>
-                  <Plus />
-                </button>
-              </form>
             </div>
+          ))}
+        </div>
+      )}
 
-            {tasks.map(task => (
-              <div key={task.id} className="list-item" onClick={() => toggleTask(task.id)} style={{cursor:'pointer', opacity: task.is_completed ? 0.5 : 1}}>
-                <div style={{display:'flex', gap: 15, alignItems:'center'}}>
-                  {task.is_completed ? <CheckCircle className="text-grad" /> : <Circle style={{opacity:0.3}} />}
-                  <div style={{textDecoration: task.is_completed ? 'line-through' : 'none'}}>
-                    {task.title}
-                  </div>
-                </div>
-                <button onClick={(e) => {e.stopPropagation(); deleteTask(task.id)}} style={{background:'none', border:'none', color:'rgba(255,255,255,0.3)'}}>
-                  <Trash2 size={16}/>
-                </button>
+      {/* --- MÓDULO TAREFAS --- */}
+      {activeTab === 'tasks' && (
+        <div className="card">
+          <h3 style={{marginBottom: 20, fontSize: '1.1rem'}}>Controle de Tarefas</h3>
+          <form onSubmit={handleAddTask} style={{display:'flex', gap: 10, marginBottom: 30}}>
+            <input placeholder="Nova tarefa..." value={newTask.title} onChange={e => setNewTask({...newTask, title: e.target.value})} required/>
+            <button type="submit" className="btn btn-primary" style={{width:'auto'}}>Adicionar</button>
+          </form>
+
+          {tasks.map(task => (
+            <div key={task.id} style={{display:'flex', alignItems:'center', padding:'15px 0', borderBottom:'1px solid #334155', opacity: task.is_completed ? 0.5 : 1}}>
+              <input 
+                type="checkbox" 
+                checked={task.is_completed} 
+                onChange={() => toggleTask(task.id)}
+                style={{width: 20, height: 20, marginRight: 15, marginBottom:0}} 
+              />
+              <div style={{flex:1, textDecoration: task.is_completed ? 'line-through' : 'none'}}>
+                {task.title}
               </div>
-            ))}
-          </>
-        )}
-      </div>
+              <button onClick={() => deleteTask(task.id)} style={{background:'none', border:'none', color:'#475569', cursor:'pointer'}}>
+                <Trash2 size={16}/>
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
